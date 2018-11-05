@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+}
+
+jacoco {
+    toolVersion = "0.7.6.201602180812"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+group 'com.newrelic.codingchallenge'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+sourceSets{
+    main{
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    test{
+        java {
+            srcDirs = ['src/test/java']
+        }
+        resources {
+            srcDirs = ['src/test/resources']
+        }
+    }
+}
+dependencies {
+    compile "org.slf4j:slf4j-api:1.7.10"
+    compile "org.slf4j:slf4j-log4j12:1.7.10"
+    testCompile "junit:junit:4+"
+    compile "com.typesafe:config:1.3.2"
+    testCompile "pl.pragmatists:JUnitParams:1.1.1"
+}
+
+ext {
+    limits = [
+            'instruction': 95,
+            'branch'     : 95,
+            'line'       : 95,
+            'complexity' : 95,
+            'method'     : 95,
+            'class'      : 95
+    ]
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = true
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+
+
+
+    doLast {
+        def report = file("${jacoco.reportsDir}/test/jacocoTestReport.xml")
+        logger.lifecycle("Checking coverage results: ${report}")
+
+        def parser = new XmlParser()
+        parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+        parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+        def results = parser.parse(report)
+
+        def percentage = {
+            def covered = it.'@covered' as Double
+            def missed = it.'@missed' as Double
+            ((covered / (covered + missed)) * 100).round(2)
+        }
+
+        def counters = results.counter
+        def metrics = [:]
+        metrics << [
+                'instruction': percentage(counters.find { (it.'@type' == 'INSTRUCTION') }),
+                'branch'     : percentage(counters.find { it.'@type' == 'BRANCH' }),
+                'line'       : percentage(counters.find { it.'@type' == 'LINE' }),
+                'complexity' : percentage(counters.find { it.'@type' == 'COMPLEXITY' }),
+                'method'     : percentage(counters.find { it.'@type' == 'METHOD' }),
+                'class'      : percentage(counters.find { it.'@type' == 'CLASS' })
+        ]
+
+
+        def failures = []
+        metrics.each {
+            def limit = limits[it.key]
+            if (it.value < limit) {
+                failures.add("- ${it.key} coverage org.idey.algo.rate is: ${it.value}%, minimum is ${limit}%")
+            }
+        }
+
+        if (failures) {
+            logger.quiet("------------------ Code Coverage Failed -----------------------")
+            failures.each {
+                String val = it as String
+                logger.quiet(val)
+            }
+            logger.quiet("---------------------------------------------------------------")
+            throw new GradleException("Code coverage failed")
+        } else{
+            logger.quiet("Passed Code Coverage Checks")
+        }
+    }
+}
+
+check.dependsOn jacocoTestReport
