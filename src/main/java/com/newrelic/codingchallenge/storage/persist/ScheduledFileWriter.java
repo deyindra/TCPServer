@@ -1,5 +1,7 @@
 package com.newrelic.codingchallenge.storage.persist;
 
+import com.newrelic.codingchallenge.Configurable;
+import com.newrelic.codingchallenge.config.ServerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * after it starts
  * @see AutoCloseable
  */
-public class ScheduledFileWriter implements AutoCloseable {
+public class ScheduledFileWriter extends Configurable implements AutoCloseable {
     private LinkedBlockingQueue<Integer> queue;
     private FileChannel channel;
     private Timer t;
@@ -32,7 +34,8 @@ public class ScheduledFileWriter implements AutoCloseable {
      * @param filePath path of the file where output will be written
      * @throws IllegalArgumentException in case file path is invalid
      */
-    public ScheduledFileWriter(String filePath) {
+    public ScheduledFileWriter(ServerConfig config, String filePath) {
+        super(config);
         try {
             if (filePath == null || ("").equals(filePath.trim())) {
                 throw new IllegalArgumentException("Invalid FilePath");
@@ -49,7 +52,7 @@ public class ScheduledFileWriter implements AutoCloseable {
                     LOGGER.info(String.format("%s kicked off!!", Thread.currentThread().getName()));
                     writeToFileChannel();
                 }
-            },5000,5000);
+            },config.getFileChannelWriteInterval(),config.getFileChannelWriteInterval());
         }catch (FileNotFoundException ex){
             throw new IllegalArgumentException(ex);
         }

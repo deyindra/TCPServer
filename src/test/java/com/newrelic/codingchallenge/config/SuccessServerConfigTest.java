@@ -9,11 +9,17 @@ import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class SuccessServerConfigTest extends AbstractServerConfigTest {
-    private int expectedPortValue;
+    private String host;
+    private int port;
+    private int numClient;
+    private int writeInterval;
 
-    public SuccessServerConfigTest(String filePath, int expectedPortValue) {
+    public SuccessServerConfigTest(String filePath, String host, int port, int numClient, int writeInterval) {
         super(filePath);
-        this.expectedPortValue = expectedPortValue;
+        this.host = host;
+        this.port = port;
+        this.numClient = numClient;
+        this.writeInterval = writeInterval;
     }
 
     @Before
@@ -31,9 +37,9 @@ public class SuccessServerConfigTest extends AbstractServerConfigTest {
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {"", 4000},
-                {" ", 4000},
-                {SuccessServerConfigTest.class.getResource("/sample.conf").getPath(),7070}
+                {"", "localhost",4000,5,5000},
+                {" ", "localhost",4000,5,5000},
+                {SuccessServerConfigTest.class.getResource("/sample.conf").getPath(),"localhost",7070,6,5000}
         });
     }
 
@@ -41,7 +47,10 @@ public class SuccessServerConfigTest extends AbstractServerConfigTest {
     public void testConfig(){
         System.setProperty(ServerConfig.CONFIG_FILE_KEY, filePath);
         ServerConfig config = new ServerConfig();
-        Assert.assertEquals(config.getConfig().getInt("server.port"),expectedPortValue);
+        Assert.assertEquals(config.getServerHost(),host);
+        Assert.assertEquals(config.getServerPort(),port);
+        Assert.assertEquals(config.getNumberOfClient(),numClient);
+        Assert.assertEquals(config.getFileChannelWriteInterval(),writeInterval);
 
    }
 

@@ -1,7 +1,9 @@
 package com.newrelic.codingchallenge.storage.persist;
 
+import com.newrelic.codingchallenge.config.ServerConfig;
 import com.newrelic.codingchallenge.rule.ExceptionLoggingRule;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -20,11 +22,13 @@ public class ScheduledFileWriterTest {
     @Rule public ExpectedException expectedException = ExpectedException.none();
 
 
+
     @Test
     public void testSuccessScheduler() throws Exception {
         File tempFile = testFolder.newFile("file.txt");
         Deque<String> deque = new LinkedList<>();
-        ScheduledFileWriter writer = new ScheduledFileWriter(tempFile.getPath());
+        ServerConfig config = new ServerConfig();
+        ScheduledFileWriter writer = new ScheduledFileWriter(config,tempFile.getPath());
         for(int i=0;i<10;i++){
             int number = i;
             Thread t = new Thread(() -> {
@@ -57,7 +61,7 @@ public class ScheduledFileWriterTest {
     @Test
     public void testSuccessSchedulerWithEmptyQueue() throws Exception {
         File tempFile = testFolder.newFile("file1.txt");
-        ScheduledFileWriter writer = new ScheduledFileWriter(tempFile.getPath());
+        ScheduledFileWriter writer = new ScheduledFileWriter(new ServerConfig(),tempFile.getPath());
         Thread.sleep(10000);
         writer.close();
     }
@@ -65,25 +69,25 @@ public class ScheduledFileWriterTest {
     @Test
     public void testFailureScheduledFileWriterWithNull(){
         expectedException.expect(IllegalArgumentException.class);
-        new ScheduledFileWriter(null);
+        new ScheduledFileWriter(new ServerConfig(),null);
     }
 
     @Test
     public void testFailureScheduledFileWriterWithEmptyString(){
         expectedException.expect(IllegalArgumentException.class);
-        new ScheduledFileWriter("");
+        new ScheduledFileWriter(new ServerConfig(),"");
     }
 
     @Test
     public void testFailureScheduledFileWriterWithEmptyStringWithSpaces(){
         expectedException.expect(IllegalArgumentException.class);
-        new ScheduledFileWriter(" ");
+        new ScheduledFileWriter(new ServerConfig()," ");
     }
 
     @Test
     public void testFailureScheduledFileWriterWithFolderPath(){
         expectedException.expect(IllegalArgumentException.class);
-        new ScheduledFileWriter(System.getProperty("user.home"));
+        new ScheduledFileWriter(new ServerConfig(),System.getProperty("user.home"));
     }
 
 }
