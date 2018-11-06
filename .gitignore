@@ -3,4 +3,5 @@ build
 gradle
 .idea
 TCPServer.iml
+out
 
